@@ -32,6 +32,16 @@ async function main() {
   await setAndSetSlot(0, 1, 2);
   await setAndSetSlot(0, 1, 2, true);
   console.log();
+
+  console.log('Read and set');
+  await readAndSetSlot(1, 2);
+  await readAndSetSlot(1, 2, true);
+  console.log();
+
+  console.log('Set and read');
+  await setAndReadSlot(1, 2);
+  await setAndReadSlot(1, 2, true);
+  console.log();
 }
 
 async function setSlot(from, to, accessList = false) {
@@ -70,6 +80,46 @@ async function setAndSetSlot(from, to1, to2, accessList = false) {
   let trace = await network.provider.send("debug_traceTransaction", [tx.hash])
   let [gasCost1, gasCost2] = getGasCosts(trace, 'SSTORE');
   console.log(`${accessList ? "With access list" : "Without access list"}: first SSTORE ${gasCost1}, second SSTORE ${gasCost2}`);
+}
+
+async function readAndSetSlot(from, to, accessList = false) {
+  const Test = await ethers.getContractFactory("Test");
+  let test = await deploy(Test, from);
+
+  let options = {}
+  if (accessList) {
+    options.accessList = [{
+      address: test.address,
+      storageKeys: ["0x0000000000000000000000000000000000000000000000000000000000000000"]
+    }]
+  }
+
+  let tx = await test.readAndSet(to, options);
+
+  let trace = await network.provider.send("debug_traceTransaction", [tx.hash])
+  let readGasCost = getGasCost(trace, 'SLOAD');
+  let setGasCost = getGasCost(trace, 'SSTORE');
+  console.log(`${accessList ? "With access list" : "Without access list"}: SLOAD ${readGasCost}, SSTORE ${setGasCost}`);
+}
+
+async function setAndReadSlot(from, to, accessList = false) {
+  const Test = await ethers.getContractFactory("Test");
+  let test = await deploy(Test, from);
+
+  let options = {}
+  if (accessList) {
+    options.accessList = [{
+      address: test.address,
+      storageKeys: ["0x0000000000000000000000000000000000000000000000000000000000000000"]
+    }]
+  }
+
+  let tx = await test.setAndRead(to, options);
+
+  let trace = await network.provider.send("debug_traceTransaction", [tx.hash])
+  let setGasCost = getGasCost(trace, 'SSTORE');
+  let readGasCost = getGasCost(trace, 'SLOAD');
+  console.log(`${accessList ? "With access list" : "Without access list"}: SSTORE ${setGasCost}, SLOAD ${readGasCost}`);
 }
 
 async function readSlot(accessList = false) {

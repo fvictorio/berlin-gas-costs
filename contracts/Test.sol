@@ -28,4 +28,16 @@ contract Test {
 
     return a + b;
   }
+
+  function readAndSet(uint _x) public returns (uint) {
+    uint a = x;
+    x = _x;
+    return a;
+  }
+
+  function setAndRead(uint _x) public returns (uint) {
+    x = _x;
+    uint a = x;
+    return a;
+  }
 }
